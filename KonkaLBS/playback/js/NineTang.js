@@ -3,10 +3,8 @@
  * Date: 13-8-28
  * Time: 上午11:04
  */
-(function (window, undefined) {
+(function (window) {
     var document = window.document;
-        /*class2type = {},
-        core_tostring = class2type.toString;*/
 
     var $$ = $$ || function (id) {
         return document.getElementById(id);
@@ -14,10 +12,6 @@
 
 
     $$.type = function (obj) {
-        if (obj == null) {
-            return String(obj);
-        }
-        //var type = typeof obj === 'object' || typeof obj === 'function' ? class2type
     };
 
     $$.isPlainObject = function () {
@@ -29,10 +23,10 @@
     if (document.addEventListener) {
         $$.Handler.addHandler = function (element, eventType, handler) {
             element.addEventListener(eventType, handler, false);
-        }
+        };
         $$.Handler.removeHandler = function (element, eventType, handler) {
             element.removeEventListener(eventType, handler, false);
-        }
+        };
     } else if (document.attachEvent) {
         $$.Handler.addHandler = function (element, eventType, handler) {
             if ($$.Handler._find(element, eventType, handler) != -1) {
@@ -58,7 +52,7 @@
                     stopPropagation: function () {
                         this._event.cancelBubble = true;
                     },
-                    preventDefalut: function () {
+                    preventDefault: function () {
                         this._event.returnValue = false;
                     }
                 };
@@ -80,7 +74,7 @@
                 wrappedHandler: wrapperHandler
             };
 
-            var d = element.document || element;
+            var d = element.ownerDocument || element;
             var w = d.parentWindow;
             var id = $$.Handler._uid();
             if (!w._allHandlers) w._allHandlers = {};
@@ -91,12 +85,12 @@
                 w._onunloadHandlerRegistered = true;
                 w.attachEvent("onunload", $$.Handler._removeAllHandlers);
             }
-        }
+        };
 
         $$.Handler.removeHandler = function (element, eventType, handler) {
             var i = $$.Handler._find(element, eventType, handler);
             if (i == -1) return;
-            var d = element.document || element;
+            var d = element.ownerDocument || element;
             var w = d.parentWindow;
 
             var handlerID = element._handlers[i];
@@ -104,14 +98,14 @@
             element.detachEvent("on" + eventType, h.wrappedHandler);
             element._handlers.splice(i, 1);
             delete  w._allHandlers[handlerID];
-        }
+        };
 
         $$.Handler._find = function (element, eventType, handler) {
             var handlers = element._handlers;
             if (!handlers) {
                 return -1;
             }
-            var d = element.document || element;
+            var d = element.ownerDocument || element;
             var w = d.parentWindow;
 
             for (var i = handlers.length - 1; i >= 0; i--) {
@@ -122,21 +116,23 @@
                 }
             }
             return -1;
-        }
+        };
 
         $$.Handler._removeAllHandlers = function () {
             var w = this;
             for (var id in w._allHandlers) {
-                var h = w._allHandlers[id];
-                h.element.detachEvent("on" + h.eventType, h.wrappedHandler);
-                delete w._allHandlers[id];
+                if (w._allHandlers.hasOwnProperty(id)) {
+                    var h = w._allHandlers[id];
+                    h.element.detachEvent("on" + h.eventType, h.wrappedHandler);
+                    delete w._allHandlers[id];
+                }
             }
-        }
+        };
 
         $$.Handler._counter = 0;
         $$.Handler._uid = function () {
             return "h" + $$.Handler._counter++;
-        }
+        };
     }
 
 
@@ -168,7 +164,7 @@
                         return _factory;
                     }
                 } catch (e) {
-                    continue;
+
                 }
             }
 
@@ -180,7 +176,6 @@
          @param {string} url
          @param {Function} callback
          @param {Function} errorHandler
-         @return {null}
          */
 
         $$.HTTP.getHeaders = function (url, callback, errorHandler) {
@@ -197,10 +192,10 @@
                         }
                     }
                 }
-            }
+            };
             request.open("HEAD", url);
             request.send(null);
-        }
+        };
 
 
         /**
@@ -220,14 +215,11 @@
                 var pos = line.indexOf(':');
                 if (pos) {
                     var name = line.substring(0, pos).replace(ls, '').replace(ts, '');
-                    var value = line.substring(pos + 1).replace(ls, '').replace(ts, '');
-                    headers[name] = value;
-                } else {
-                    continue;
+                    headers[name] = line.substring(pos + 1).replace(ls, '').replace(ts, '');
                 }
             }
             return headers;
-        }
+        };
         /**
          @param {string} url
          @param {function} callback
@@ -241,7 +233,7 @@
                 }
             }
 
-        }
+        };
 
         /**
          @param {string} url
@@ -266,7 +258,7 @@
                 if (request.readyState == 4) {
                     if (timer) clearTimeout(timer);
                     if (request.status == 200) {
-                        callback(HTTP._getResponse(request));
+                        callback($$.HTTP._getResponse(request));
                     } else {
                         if (options.errorHandler) {
                             options.errorHandler(request.status, request.statusText);
@@ -277,7 +269,7 @@
                 } else if (options.progressHandler) {
                     options.progressHandler(++n);
                 }
-            }
+            };
             var target = url;
             if (options.parameters) {
                 var delimiter = url.indexOf('?') ? '&' : '?';
@@ -285,13 +277,13 @@
                 request.open("GET", target);
                 request.send(null);
             }
-        }
+        };
 
         /**
          @param {string} url
          @param {function} callback
          @param {object} values
-         @pram {function} errHandler
+         @param {function} errorHandler
          */
 
 
@@ -300,16 +292,16 @@
             request.onreadystatechange = function () {
                 if (request.readyState == 4) {
                     if (request.state == 200) {
-                        callback(HTTP._getResponse(request));
+                        callback($$.HTTP._getResponse(request));
                     } else {
                         if (errorHandler) {
                             errorHandler(request.status, request.statusText);
                         } else callback(null);
                     }
                 }
-            }
+            };
             request.open("POST", url);
-            request.setRequestHeader("Contennt-Type", "application/x-www-form-urlencoded");
+            request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             request.send($$.HTTP.encodeFormData(values));
         };
 
@@ -321,18 +313,20 @@
             var pairs = [];
             var rSpace = /%20/g;
             for (var name in data) {
-                var value = data[name].toString();
-                var pair = encodeURIComponent(name).replace(rSpace, "+") + "=" +
-                    encodeURIComponent(value).replace(rSpace, "+");
-                pairs.push(pair);
+                if (data.hasOwnProperty(name)) {
+                    var value = data[name].toString();
+                    var pair = encodeURIComponent(name).replace(rSpace, "+") + "=" +
+                        encodeURIComponent(value).replace(rSpace, "+");
+                    pairs.push(pair);
+                }
             }
             return pairs.join('&');
-        }
+        };
 
 
         /**
          * 跨域script
-         @param ｛string｝url
+         @param {string} url
          @param {object} params
          @param {(function|string)} callback
          */
@@ -345,7 +339,7 @@
             if (typeof params == 'object') {
                 //if plain Object
                 for (p in params) {
-                    if (typeof p === 'string') {
+                    if (params.hasOwnProperty(p) && typeof p === 'string') {
                         if (params[p]) {
                             pairs.push(p + '=' + params[p]);
                         }
@@ -359,8 +353,6 @@
 
                 if (typeof callback === 'string') {
                     url += 'jsoncallback=' + callback;
-                } else if (typeof callback === 'function' && callback.name) {
-                    url += 'jsoncallback=' + callback.name;
                 }
             }
             script.onload = script.onreadystatechange = function () {
@@ -369,10 +361,10 @@
                 }
                 //script.onload = script.onreadystatechange = null;
                 //todo
-            }
+            };
             document.body.appendChild(script);
             script.src = url;
-        }
+        };
 
 
         /**
@@ -383,11 +375,13 @@
             switch (request.getResponseHeader("Content-Type")) {
                 case    "text/xml":
                     return request.responseXML;
+
                 case "text/json":
                 case "text/javascript":
                 case "application/javascript":
                 case "application/x-javascript":
                     return eval(request.responseText);
+
                 default :
                     return request.responseText;
             }
