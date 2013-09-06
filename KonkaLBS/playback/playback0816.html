@@ -14,14 +14,14 @@
         <label for="startTime">开始时间：</label><input name="startTime" id="startTime" value="">
         <label for="endTime">结束时间：</label><input name="endTime" id="endTime" value="">
         <label for="playRate">播放速度：</label><input name="playRate" id="playRate" value="5">
-        <a id="playBtn" href="javascript:void (0);">播放</a>
+        <a id="playBtn" href="javascript:void (0)">播放</a>
 
         <div id="trackBar">
             <span id="progresser" title="进度条"></span>
         </div>
     </div>
 
-    <a href="javascript:void(0);" id='detailBtn'>明细</a>
+    <a href="javascript:void(0)" id='detailBtn'>明细</a>
 </div>
 
 <div id="detail"></div>
@@ -39,7 +39,7 @@
         PlayData.init = function (id) {
             PlayData.ID = id;
             PlayData.init = function (data) {
-                if (typeof data == 'object' && 'name' in data) {
+                if ((typeof data != undefined) && data == 'object' && 'name' in data) {
                     //按获取client信息执行
                     this.clientInfo = data;
                     //getInfo //getLatestSession
@@ -53,7 +53,8 @@
                     this.length = this.jsonData.length;
                     this.initUI();
                 }
-            }
+            };
+
             if (window.DEBUGGING) {
                 $$.HTTP.scriptRequest(PlayData.debugURL, null, null);
             } else {
@@ -184,7 +185,7 @@
             var isPlaying = PlayBar.isPlaying;
             if (isPlaying < 1) {
                 //BAIDU.Animation.play();
-                PlayBar.play()
+                PlayBar.play();
                 playBtn.innerText = '暂停';
             } else {
                 //BAIDU.Animation.pause();

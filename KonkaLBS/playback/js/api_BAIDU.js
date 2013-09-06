@@ -11,7 +11,7 @@ var BAIDU = {
 };
 document.write('<script type="text/javascript" src="http://api.map.baidu.com/api?v=' + BAIDU.API.version + '&ak=' + BAIDU.API.key + '" ></script>');
 
-(function (window, undefined) {
+(function (window) {
 
 
     var __BAIDU = {},
@@ -137,9 +137,8 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
 
                 onMarkersSet: function (pois) {
                     setTimeout(function () {
-                        var BAIDU = __BAIDU;
-                        BAIDU.player.setAnimation(BMAP_ANIMATION_DROP); //BMAP_ANIMATION_DROP
-                        BAIDU.map.addOverlay(BAIDU.player);
+                        __BAIDU.player.setAnimation(BMAP_ANIMATION_DROP); //BMAP_ANIMATION_DROP
+                        __BAIDU.map.addOverlay(__BAIDU.player);
                     }, 1000);
                 },
                 //标注添加完成后的回调函数。
@@ -165,7 +164,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
 
     /**
      @param {string} containerID
-     @param {Point} center
+     @param {BMap.Point} center
      @return {BMap.Map}
      */
     __BAIDU.initMap = function (containerID, center) {
@@ -182,11 +181,11 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
         }
         initAPIConf(map);
         return map;
-    }
+    };
 
 
     /**
-     @param {array.<object>} jsonData
+     @param {Array.<Object>} jsonData
      */
     __BAIDU.buildStage = function (jsonData) {
         this.map.removeEventListener("tilesloaded", $$.ExtEvents.tilesLoadedHandler);  //TODO 可否这样移除事件？
@@ -198,7 +197,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
         //创建移动对象player
         this.player = createPlayer(this.points[0]);
         this.Animation = createAnimation();
-    }
+    };
 
     function coordsToPoints(coords) {
         var points = [],
@@ -211,12 +210,11 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
     }
 
     /**
-     @param {array.<object>} jsonData
-     @return  {object}
+     @param {Array.<Object>} jsonData
+     @return  {Object}
      */
     function filterJsonData(jsonData) {
-        var coords = {},
-            valid = [],
+        var valid = [],
             less_accuracy = [],
             west = [],
             east = [],
@@ -263,7 +261,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
                 less_accuracy.push(coord);
             }
         }
-        coords = {
+        var coords = {
             valid: valid,
             dropped: {
                 less_accuracy: less_accuracy,
@@ -331,8 +329,8 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
 
     //添加动画组件
     function createAnimation() {
-        var idx = 0,
-            animation = {
+        var idx = 0;
+        return {
                 play: function () {
                     idx++;
                     var player = __BAIDU.player,
@@ -346,9 +344,8 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
                 pause: function () {
                 },
                 reset: function () {
-                    var BAIDU = __BAIDU,
-                        player = BAIDU.player,
-                        len = BAIDU.points.length;
+                    var player = __BAIDU.player,
+                        len = __BAIDU.points.length;
                     player.setPosition(__BAIDU.points[len]);
                     player.setIcon(player.defaultIcon);
                     idx = 0;
@@ -356,7 +353,6 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
                 stop: function () {
                 }
             };
-        return animation;
     }
 
     //添加移动对象player
@@ -459,6 +455,8 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
                     html += '<tr><td class="propName">' + prop + ' :</td><td class="propValue">' + data[prop] + '</td></tr>';
                 }
             }
+
+            //todo 数组优化 array.join()
         }
         html += '</table>';
         return html;
@@ -502,8 +500,8 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
     }
 
     /**
-     @param {array.<Point>} points
-     @param {object} lineConfig
+     @param {Array.<BMap.Point>} points
+     @param {Object} lineConfig
      */
     function drawLine(points, lineConfig) {
         var config = lineConfig || __API_CONF.lineConf;
@@ -512,7 +510,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
     }
 
     /**
-     @param {object} coord
+     @param {Object} coord
      @return {BMap.Point}
      */
     function coord2Point(coord) {
@@ -522,7 +520,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
     }
 
     /**
-     @param {array.<object>}  points
+     @param {Array.<object>}  points
      * */
     function addEndsMarker(points) {
         var headPt = points[0],
