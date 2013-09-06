@@ -3,11 +3,10 @@
  * Date: 13-8-28
  * Time: 上午11:04
  */
-
 (function (window, undefined) {
-    var document = window.document,
-        class2type = {},
-        core_tostring = class2type.toString;
+    var document = window.document;
+        /*class2type = {},
+        core_tostring = class2type.toString;*/
 
     var $$ = $$ || function (id) {
         return document.getElementById(id);
