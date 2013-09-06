@@ -1,0 +1,85 @@
+/**
+ * Created By NineTang.
+ * Date: 13-8-28
+ * Time: 上午11:04
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+html, #header, #container {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+html {
+    padding-top: 80px;
+    overflow: hidden;
+}
+
+#header {
+    height: 80px;
+    background: #ECF1F4;
+    position: relative;
+    top: -80px;
+}
+
+#header #UIData {
+    width: 1000px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+#header #detailBtn {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+}
+
+#trackBar {
+    width: 100%;
+    background: #444444;
+    height: 8px;
+    position: relative;
+    top: 20px;
+}
+
+#progresser {
+    position: absolute;
+    left: 0;
+    background: #009933;
+    width: 6px;
+    height: 8px;
+    border-right: 2px solid #F00;
+}
+
+#detail {
+    height: 200px;
+    background: #0099CC;
+    position: relative;
+    top: -80px;
+    display: none;
+}
+
+#container {
+    height: 100%;
+    background: #666666;
+    position: relative;
+    top: -80px;
+}
+
+#playerInfoWinContent .propName {
+    text-align: right;
+}
+
+#playerInfoWinContent .propValue {
+    padding-left: 20px;
+    text-align: left;
+}
