@@ -12,8 +12,6 @@ var BAIDU = {
 document.write('<script type="text/javascript" src="http://api.map.baidu.com/api?v=' + BAIDU.API.version + '&ak=' + BAIDU.API.key + '" ></script>');
 
 (function (window) {
-
-
     var __BAIDU = {},
         __DEBUGING = window.DEBUGGING = true,
         __CITY = '深圳',
@@ -194,6 +192,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
 
         //this.transitRoute = drawTransitRoute(__KONKA, __YANG_END);
         this.drivingRoute = drawDrivingRoute(__YANG_END, this.points[0]);
+
         //创建移动对象player
         this.player = createPlayer(this.points[0]);
         this.Animation = createAnimation();

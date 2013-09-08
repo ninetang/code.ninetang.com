@@ -4,14 +4,31 @@
  * Time: 上午11:04
  */
 (function (window) {
-    var document = window.document;
+    var document = window.document,
+        $$ = $$ || function (id) {
+            return document.getElementById(id);
+        },
+        class2type = {},
+        core_toString = class2type.toString;
 
-    var $$ = $$ || function (id) {
-        return document.getElementById(id);
-    };
-
+    (function () {
+        var __typeStr = "Boolean,String,Number,Array,Object,Function,Date,RegExp,Error",//Boolean Number String Function Array Date RegExp Object Error
+            __typeArr = __typeStr.split(','),
+            __len = __typeArr.length,
+            __i = 0;
+        for (; __i < __len; __i++) {
+            class2type['[object ' + __typeArr[__i] + ']'] = __typeArr[__i].toLowerCase();
+        }
+    }());
 
     $$.type = function (obj) {
+        if (typeof  obj == null) {
+            return String(obj);
+        }
+        var type = typeof obj;
+        if (type === 'object' || type === 'function') {
+            return class2type[core_toString.call(obj)];
+        }
     };
 
     $$.isPlainObject = function () {
@@ -386,6 +403,27 @@
                     return request.responseText;
             }
         };
+
+        $$.HTTP.parseGet = function () {
+            var s = window.location.search,
+                params,
+                $_GET = {};
+            if (s && s.indexOf('?') > -1) {
+                params = s.substr(1);
+                params = params.split('&');
+                var len = params.length,
+                    i = 0;
+                for (; i < len; i++) {
+                    var param = params[i],
+                        idx = param.indexOf('='),
+                        k = param.substr(0, idx),
+                        v = param.substr(idx + 1);
+                    $_GET[k] = decodeURIComponent(v);
+                }
+                return $_GET;
+            }
+            return;
+        }
 
     })();
 

@@ -5,6 +5,38 @@
     <meta name="Author" content="NineTang">
 </head>
 <body>
+<script type="text/javascript" src="./js/NineTang.js"></script>
+<script type="text/javascript">
+    (function (window) {
+        var Playback = {},
+                DEBUGGING = true,
+                __serverURL = 'http://172.21.4.232/site/beidou/index.php?r=client/',
+                __method = 'getInfo',// getLatestSession, etc.
+                __localURL = './Playback.json';
+        Playback.JSONCallback = 'PlayBack.GetAndInit';
+        Playback.GetAndInit = function ($_GET) {
+            Playback.GetAndInit = __newFunc;
+            if (DEBUGGING) {
+                $$.HTTP.scriptRequest(__localURL, $_GET, Playback.JSONCallback);
+            } else {
+                $$.HTTP.scriptRequest(__serverURL + __method, $_GET, Playback.JSONCallback);
+            }
+            function __newFunc(JSONData) {
+                var type = $$.type(JSONData);
+                if (type == 'array') {
+                    Playback = {};
+                    Playback.JSONData = JSONData;
+                    window.Playback = Playback;
+                }
+            }
+        };
+        window.Playback = Playback;
+    }(window));
 
+    var $_GET = $$.HTTP.parseGet();
+    Playback.GetAndInit($_GET);
+
+
+</script>
 </body>
 </html>

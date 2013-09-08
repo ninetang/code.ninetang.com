@@ -45,9 +45,10 @@ html {
 
 #trackBar {
     width: 100%;
-    background: #444444;
+    background: rgb(207, 205, 205);
     height: 8px;
     position: relative;
+    border-top: 1px solid #AAAAAA;
     top: 20px;
 }
 
