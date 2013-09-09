@@ -101,17 +101,21 @@
     })(window);
 
 
-
-
     //Dom加载完毕！
     $$.Handler.addHandler(window, 'load', function (e) {
         $$.ExtEvents.tilesLoadedHandler = function (e) {
             //alert("地图加载完毕");
+            var __YANG_END = {
+                //宝安区华美
+                lat: 22.571246,
+                lng: 113.886262
+            };
             BAIDU.buildStage(PlayData.jsonData);
+            BAIDU.drivingRoute = BAIDU.drawDrivingRoute(__YANG_END, BAIDU.points[0]);
         };
 
         //加载初始化地图和舞台
-        BAIDU.map = BAIDU.initMap('container', null);
+        BAIDU.initMap('container', null);
         BAIDU.map.addEventListener("tilesloaded", $$.ExtEvents.tilesLoadedHandler);
 
 

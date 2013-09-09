@@ -3,8 +3,10 @@
 <head>
     <title></title>
     <meta name="Author" content="NineTang">
+    <link rel="stylesheet" href="./css/playback.css"/>
 </head>
 <body>
+<div id="container"></div>
 <script type="text/javascript" src="./js/NineTang.js"></script>
 <script type="text/javascript">
     (function (window) {
@@ -36,7 +38,14 @@
     var $_GET = $$.HTTP.parseGet();
     Playback.GetAndInit($_GET);
 
-
+</script>
+<script type="text/javascript" src="./js/api_BAIDU.js"></script>
+<script type="text/javascript">
+    $$.Handler.addHandler(window, 'load', function (e) {
+        BAIDU.initMap('container', null);
+        BAIDU.buildStage(Playback.JSONData);
+        var polyline = BAIDU.drawRoute(0);
+    });
 </script>
 </body>
 </html>
