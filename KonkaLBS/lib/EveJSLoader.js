@@ -13,20 +13,22 @@ var Loader = {
      * @var onLoad  when load a individual file completed ,
      * this event will be fired * @param {String} name  loaded script file name
      */
-    onLoad : function(name){},
+    onLoad: function (name) {
+    },
     /**
      * @var onReady when all scripts loaded, this event will be fired
      */
-    onReady : function(){},
+    onReady: function () {
+    },
     /**
      * a empty constructor
      */
-    init : function(container) {
+    init: function (container) {
     },
     /**
      * a empty error handler
      */
-    handlerError : function(e) {
+    handlerError: function (e) {
         alert(e);
     },
     /**
@@ -34,8 +36,8 @@ var Loader = {
      * @param {string} evt  event name
      * @param {function} handler
      */
-    on : function(evt, handler) {
-        switch ( evt.toLowerCase() ) {
+    on: function (evt, handler) {
+        switch (evt.toLowerCase()) {
             case 'load' :
                 this.onLoad = handler;
                 break;
@@ -50,24 +52,24 @@ var Loader = {
     /**
      * private method
      */
-    _load : function(path, callback) {
+    _load: function (path, callback) {
         try {
             var script = document.createElement('script');
             script.src = path;
             script.type = "text/javascript";
             document.getElementsByTagName("head")[0].appendChild(script);
-            if( script.addEventListener ) {
+            if (script.addEventListener) {
                 script.addEventListener("load", callback, false);
-            } else if(script.attachEvent) {
-                script.attachEvent("onreadystatechange", function(){
-                    if(script.readyState == 4
+            } else if (script.attachEvent) {
+                script.attachEvent("onreadystatechange", function () {
+                    if (script.readyState == 4
                         || script.readyState == 'complete'
                         || script.readyState == 'loaded') {
                         callback();
                     }
                 });
             }
-        } catch(e) {
+        } catch (e) {
             this.handlerError(e);
             callback();
         }
@@ -76,21 +78,21 @@ var Loader = {
      * start loading process
      * @param {Array} scripts  files want to be loaded
      */
-    load : function(scripts) {
+    load: function (scripts) {
         var total = scripts.length;
-        var _self  = this;
+        var _self = this;
         var indicator = arguments[1] || 0;
-        if ( indicator >= total ) {
+        if (indicator >= total) {
             _self.onReady();
             return true;
         }
 
         var callee = arguments.callee;
         var script = scripts[indicator];
-        this._load(script, function() {
+        this._load(script, function () {
             _self.onLoad(script);
             callee.apply(_self, [scripts, ++indicator]);
         });
         return true;
     }
-} ;
+};

@@ -4,7 +4,7 @@
     <title>轨迹回放</title>
     <meta charset="utf-8">
     <meta name="Ahthor" content="NineTang">
-    <link href="css/playback.css" rel="stylesheet">
+    <link href="../css/playback.css" rel="stylesheet">
 </head>
 <body>
 
@@ -27,8 +27,8 @@
 <div id="detail"></div>
 <div id="container"></div>
 
-<script src="js/NineTang.js"></script>
-<script src="js/api_BAIDU.js?2"></script>
+<script src="../js/NineTang.js"></script>
+<script src="../js/api_BAIDU.js?2"></script>
 <script>
     //封装PlayData
     (function (window, undefined) {
@@ -45,7 +45,6 @@
                     //getInfo //getLatestSession
                     //sessionID 1370350990, 1370591877,  1370574944, 1370420820, 1368105389048
                     //1378102301 (杨博)
-
                     $$.HTTP.scriptRequest(PlayData.URL_PRE + 'getLatestSession', {id: PlayData.ID /*, sessionid: 1370350990*/}, PlayData.CALLBACK);
                 } else if (Object.prototype.toString.call(data) === '[object Array]' && data.length > 0) {
                     //按获取经纬度执行

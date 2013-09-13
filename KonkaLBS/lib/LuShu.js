@@ -16,7 +16,7 @@ var BMapLib = window.BMapLib = BMapLib || {};
 
 (function () {
     //声明baidu包
-    var  baidu =  baidu || {version: '1.5.0'};
+    var baidu = baidu || {version: '1.5.0'};
     baidu.guid = '$BAIDU$';
     //以下方法为百度Tangram框架中的方法，请到http://tangram.baidu.com 查看文档
     (function () {

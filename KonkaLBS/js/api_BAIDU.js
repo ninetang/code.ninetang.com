@@ -10,7 +10,7 @@ var BAIDU = {
     }
 };
 document.write('<script type="text/javascript" src="http://api.map.baidu.com/api?v=' + BAIDU.API.version + '&ak=' + BAIDU.API.key + '" ></script>');
-
+document.write('<script type="text/javascript" src="../lib/LuShu.js"></script>');
 (function (window) {
     var __BAIDU = {},
         __DEBUGING = window.DEBUGGING = true,
@@ -49,13 +49,15 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
      @param {Array.<Object>} jsonData
      */
     __BAIDU.buildStage = function (jsonData) {
-        this.map.removeEventListener("tilesloaded", $$.ExtEvents.tilesLoadedHandler);  //TODO 可否这样移除事件？
+        if ($$.ExtEvents && $$.ExtEvents.tilesLoadedHandler) {
+            this.map.removeEventListener("tilesloaded", $$.ExtEvents.tilesLoadedHandler);  //TODO 可否这样移除事件？
+        }
         this.coords = filterJsonData(jsonData);
         this.points = coordsToPoints(this.coords.valid);
         //this.transitRoute = drawTransitRoute(__KONKA, __YANG_END);
 
         //创建移动对象player
-        this.player = createPlayer(this.points[0]);
+        this.player = createMarker(this.points[0], true);
         this.Animation = createAnimation();
     };
 
@@ -109,9 +111,11 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
             polyline,
             icon_start = __API_CONF.destIcon(0),
             icon_end = __API_CONF.destIcon(1),
-            marker_start = new BMap.Marker(pointArr[0]),
-            marker_end = new BMap.Marker(pointArr[len - 1]),
-            map = __BAIDU.map;
+            marker_start = createMarker(pointArr[0]) ,//new BMap.Marker(pointArr[0])
+            marker_end = createMarker(pointArr[len - 1]),
+            map = this.map;
+
+        this.routePoints = pointArr;
         marker_start.setIcon(icon_start);
         marker_end.setIcon(icon_end);
 
@@ -124,6 +128,43 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
         map.setViewport(BAIDU.points);
         return polyline;
     }
+
+    __BAIDU.createLuShu = function (points) {
+//  BMapLib.LuShu(map, path, opts)
+        //参数:
+//        {Map} map
+//        Baidu map的实例对象.
+//        {Array} path
+//        构成路线的point的数组.
+//        {Json Object} opts
+//        可选的输入参数，非必填项。可输入选项包括：
+//          {
+//              "landmarkPois" : {Array} 要在覆盖物移动过程中，显示的特殊点。格式如下:landmarkPois:[
+//              {lng:116.314782,lat:39.913508,html:'加油站',pauseTime:2},
+//              {lng:116.315391,lat:39.964429,html:'高速公路收费站,pauseTime:3}]
+//
+//                  "icon" : {Icon} 覆盖物的icon,
+//                  "speed" : {Number} 覆盖物移动速度，单位米/秒
+//
+//              "defaultContent" : {String} 覆盖物中的内容
+//          }
+//  hideInfoWindow()  None    隐藏上方overlay
+//  pause()           None    暂停运动
+//  showInfoWindow()  None    显示上方overlay
+//  start(none)       None    开始运动
+//  stop()            None    结束运动
+        var opts = {
+            landmarkPois: [
+                {lng: 113.960391, lat: 22.546181, html: '红绿灯，停留1分钟', pauseTime: 5},
+                {lng: 113.952127, lat: 22.545547, html: '科苑立交', pauseTime: 5} ,
+                {lng: 113.886155, lat: 22.571279, html: '到达目的地', pauseTime: 5}
+            ],
+            icon: createIcon(),
+            speed: 1000,
+            defaultContent: '离开康佳集团，前往目的地'/**/
+        };
+        return new BMapLib.LuShu(this.map, points, opts);
+    };
 
     function initAPIConf(map) {
         return __API_CONF = {
@@ -254,7 +295,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
 
                 onMarkersSet: function (pois) {
                     setTimeout(function () {
-                        __BAIDU.player.setAnimation(BMAP_ANIMATION_DROP); //BMAP_ANIMATION_DROP
+                        //__BAIDU.player.setAnimation(BMAP_ANIMATION_DROP); //BMAP_ANIMATION_DROP
                         __BAIDU.map.addOverlay(__BAIDU.player);
                     }, 1000);
                     __BAIDU.iconLib = __BAIDU.iconLib || {};
@@ -379,7 +420,7 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
             i = 2,
             len = jsonData.length;
 
-
+        //valid.concat(jsonData[0], jsonData[1]);
         valid.push(jsonData[0], jsonData[1]);
         for (; i < len; i++) {
             var coord = jsonData[i],
@@ -502,54 +543,50 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
         };
     }
 
-    //添加移动对象player
-    function createPlayer(point) {
-        //  openInfoWindow(infoWnd:InfoWindow)	none	打开信息窗。
-        //  closeInfoWindow()	none	关闭信息窗。
-        //  setIcon(icon:Icon)	none	设置标注所用的图标对象。
-        //  getIcon()	Icon	返回标注所用的图标对象。
-        //  setPosition(position:Point)	none	设置标注的地理坐标。
-        //  getPosition()	Point	返回标注的地理坐标。
-        //  setOffset(offset:Size)	none	设置标注的偏移值。
-        //  getOffset()	Size	返回标注的偏移值。
-        //  getLabel()	Label	返回标注的文本标注。
-        //  setLabel(label:Label)	none	为标注添加文本标注。
-        //  setTitle(title:String)	none	设置标注的标题，当鼠标移至标注上时显示此标题。
-        //  getTitle()	String	返回标注的标题。
-        //  setTop(isTop:Boolean)	none	将标注置于其他标注之上。默认情况下，纬度较低的标注会覆盖在纬度较高的标注之上，从而形成一种立体效果。通过此方法可使某个标注覆盖在其他所有标注之上。注意：如果在多个标注对象上调用此方法，则这些标注依旧按照纬度产生默认的覆盖效果。
-        //  enableDragging()	none	开启标注拖拽功能。
-        //  (自 1.1 新增)
-        //          disableDragging()	none	关闭标注拖拽功能。
-        //  (自 1.1 新增)
-        //          enableMassClear()	none	允许覆盖物在map.clearOverlays方法中被清除。
-        //  (自 1.1 新增)
-        //          disableMassClear()	none	禁止覆盖物在map.clearOverlays方法中被清除。
-        //  (自 1.1 新增)
-        //          setZIndex(zIndex:Number)	none	设置覆盖物的zIndex。
-        //  (自 1.1 新增)
-        //          getMap()	Map	返回覆盖物所在的map对象。
-        //  (自 1.2 新增)
-        //          addContextMenu(menu:ContextMenu)	none	添加右键菜单。
-        //  (自 1.2 新增)
-        //          removeContextMenu(menu:ContextMenu)	none	移除右键菜单。
-        //  (自 1.2 新增)
-        //          setAnimation(animation:Animation|Null)	none	设置标注动画效果。如果参数为null，则取消动画效果。该方法需要在addOverlay方法后设置。
-        //  (自 1.2 新增)
-        //          setShadow(shadow:Icon)	none	设置标注阴影图标。
-        //  (自 1.2 新增)
-        //          getShadow()	Icon	获取标注阴影图标。
-        //  (自 1.2 新增)
-        //  addEventListener(event:String, handler:Function)	none	添加事件监听函数
-        //  removeEventListener(event:String, handler:Function)	none	移除事件监听函数
-        var player;
-        player = new BMap.Marker(point);
-        player.defaultIcon = player.getIcon();
-        player.setTop(true);
-        player.infoWindow = createInfoWidow(point);
-        player.addEventListener('click', function () {
-            this.openInfoWindow(this.infoWindow);
-        });
-        return player;
+    //创建Marker
+    function createMarker(point, hasInfoWin) {
+//  openInfoWindow(infoWnd:InfoWindow)	none	打开信息窗。
+//  closeInfoWindow()	none	关闭信息窗。
+//  setIcon(icon:Icon)	none	设置标注所用的图标对象。
+//  getIcon()	Icon	返回标注所用的图标对象。
+//  setPoint(point:Point)	none	设置标注的地理坐标。
+//  getPoint()	Point	返回标注的地理坐标。
+//  setPosition(position:Point)	none	设置标注的地理坐标。
+//  getPosition()	Point	返回标注的地理坐标。
+//  setOffset(offset:Size)	none	设置标注的偏移值。
+//  getOffset()	Size	返回标注的偏移值。
+//  getLabel()	Label	返回标注的文本标注。
+//  setLabel(label:Label)	none	为标注添加文本标注。
+//  setTitle(title:String)	none	设置标注的标题，当鼠标移至标注上时显示此标题。
+//  getTitle()	String	返回标注的标题。
+//  setTop(isTop:Boolean)	none	将标注置于其他标注之上。默认情况下，纬度较低的标注会覆盖在纬度较高的标注之上，从而形成一种立体效果。通过此方法可使某个标注覆盖在其他所有标注之上。注意：如果在多个标注对象上调用此方法，则这些标注依旧按照纬度产生默认的覆盖效果。
+//  enableDragging()	none	开启标注拖拽功能。
+//  disableDragging()	none	关闭标注拖拽功能。
+//  enableMassClear()	none	允许覆盖物在map.clearOverlays方法中被清除。
+//  disableMassClear()	none	禁止覆盖物在map.clearOverlays方法中被清除。
+//  setZIndex(zIndex:Number)	none	设置覆盖物的zIndex。
+//  getMap()	Map	返回覆盖物所在的map对象。
+//  addContextMenu(menu:ContextMenu)	none	添加右键菜单。
+//  removeContextMenu(menu:ContextMenu)	none	移除右键菜单。
+//  setAnimation(animation:Animation|Null)	none	设置标注动画效果。如果参数为null，则取消动画效果。该方法需要在addOverlay方法后设置。
+//  setShadow(shadow:Icon)	none	设置标注阴影图标。
+//  getShadow()	Icon	获取标注阴影图标
+//  addEventListener(event:String, handler:Function)	none	添加事件监听函数
+//  removeEventListener(event:String, handler:Function)	none	移除事件监听函数
+        var marker;
+        marker = new BMap.Marker(point);
+        marker.defaultIcon = marker.getIcon();
+        marker.setTop(true);
+        marker.setAnimation(BMAP_ANIMATION_DROP);
+
+
+        if (hasInfoWin) {
+            marker.infoWindow = createInfoWidow(point);
+            marker.addEventListener('click', function () {
+                this.openInfoWindow(this.infoWindow);
+            });
+        }
+        return marker;
     }
 
     function createInfoWidow(data, opts) {
@@ -665,47 +702,6 @@ document.write('<script type="text/javascript" src="http://api.map.baidu.com/api
         return new BMap.Point(lng, lat);
     }
 
-    /**
-     @param {Array.<object>}  points
-     * */
-    function addMarker(points) {
-//  openInfoWindow(infoWnd:InfoWindow)	none	打开信息窗。
-//  closeInfoWindow()	none	关闭信息窗。
-//  setIcon(icon:Icon)	none	设置标注所用的图标对象。
-//  getIcon()	Icon	返回标注所用的图标对象。
-//  setPoint(point:Point)	none	设置标注的地理坐标。
-//  getPoint()	Point	返回标注的地理坐标。
-//  setPosition(position:Point)	none	设置标注的地理坐标。
-//  getPosition()	Point	返回标注的地理坐标。
-//  setOffset(offset:Size)	none	设置标注的偏移值。
-//  getOffset()	Size	返回标注的偏移值。
-//  getLabel()	Label	返回标注的文本标注。
-//  setLabel(label:Label)	none	为标注添加文本标注。
-//  setTitle(title:String)	none	设置标注的标题，当鼠标移至标注上时显示此标题。
-//  getTitle()	String	返回标注的标题。
-//  setTop(isTop:Boolean)	none	将标注置于其他标注之上。默认情况下，纬度较低的标注会覆盖在纬度较高的标注之上，从而形成一种立体效果。通过此方法可使某个标注覆盖在其他所有标注之上。注意：如果在多个标注对象上调用此方法，则这些标注依旧按照纬度产生默认的覆盖效果。
-//  enableDragging()	none	开启标注拖拽功能。
-//  disableDragging()	none	关闭标注拖拽功能。
-//  enableMassClear()	none	允许覆盖物在map.clearOverlays方法中被清除。
-//  disableMassClear()	none	禁止覆盖物在map.clearOverlays方法中被清除。
-//  setZIndex(zIndex:Number)	none	设置覆盖物的zIndex。
-//  getMap()	Map	返回覆盖物所在的map对象。
-//  addContextMenu(menu:ContextMenu)	none	添加右键菜单。
-//  removeContextMenu(menu:ContextMenu)	none	移除右键菜单。
-//  setAnimation(animation:Animation|Null)	none	设置标注动画效果。如果参数为null，则取消动画效果。该方法需要在addOverlay方法后设置。
-//  setShadow(shadow:Icon)	none	设置标注阴影图标。
-//  getShadow()	Icon	获取标注阴影图标
-//  addEventListener(event:String, handler:Function)	none	添加事件监听函数
-//  removeEventListener(event:String, handler:Function)	none	移除事件监听函数
-        var headPt = points[0],
-            tailPt = points[points.length - 1];
-        var hm = new BMap.Marker(headPt),
-            tm = new BMap.Marker(tailPt);
-        hm.setTop(true);
-        tm.setTop(true);
-        __BAIDU.map.addOverlay(hm);
-        __BAIDU.map.addOverlay(tm);
-    }
 
     window.BAIDU = __BAIDU;
 })(window);

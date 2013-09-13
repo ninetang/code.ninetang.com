@@ -3,13 +3,18 @@
  * Date: 13-8-28
  * Time: 上午11:04
  */
-(function (window) {
+(function (window, undefined) {
     var document = window.document,
         $$ = $$ || function (id) {
             return document.getElementById(id);
         },
+
+        core_version = '1.0',
         class2type = {},
-        core_toString = class2type.toString;
+        core_toString = class2type.toString,
+        core_hasOwn = class2type.hasOwnProperty,
+        core_trim = core_version.trim,
+        rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$]/g;
 
     (function () {
         var __typeStr = "Boolean,String,Number,Array,Object,Function,Date,RegExp,Error",//Boolean Number String Function Array Date RegExp Object Error
@@ -28,10 +33,33 @@
         var type = typeof obj;
         if (type === 'object' || type === 'function') {
             return class2type[core_toString.call(obj)];
+        } else {
+            typeof obj;
         }
     };
 
-    $$.isPlainObject = function () {
+    $$.isWindow = function (obj) {
+        return obj !== null && obj == obj.window;
+    };
+    $$.isPlainObject = function (obj) {
+        if (!obj || $$.type(obj) !== 'object' || obj.nodeType || $$.isWindow(obj)) {
+            return false;
+        }
+        try {
+            if (obj.constructor && !core_hasOwn.call(obj, "constructor") && !core_hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+                return false;
+            }
+        } catch (e) {
+            return false;
+        }
+        var key;
+        for (key in obj) {
+        }
+        return key === undefined || core_hasOwn.call(obj.key);
+    };
+
+    $$.extend = function (src, options) {
+
     };
 
 

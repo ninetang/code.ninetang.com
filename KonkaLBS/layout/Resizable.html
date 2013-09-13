@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta name="Author" content="NineTang">
+    <link rel="stylesheet" href="../themes/base/jquery-ui.css"/>
+    <script type="text/javascript" src="../lib/jquery-1.9.1.js"></script>
+    <script type="text/javascript" src="../lib/jquery-ui.js"></script>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        html {
+
+        }
+
+        body {
+            font-size: 62.5%;
+            font-family: '微软雅黑';
+        }
+
+        #ControlPanel {
+            width: 300px;
+            /*border: 1px solid red;*/
+            height: 100%;
+            float: left;
+            padding: 5px;
+            box-sizing: border-box;
+
+        }
+
+        #Perspective {
+            height: 100%;
+            /*border: 1px solid green;*/
+            position: relative;
+            right: 0;
+            padding: 33px 5px 0 5px;
+            box-sizing: border-box;
+        }
+
+        .group {
+            zoom: 1;
+        }
+
+        #menuTab {
+            position: relative;
+            margin-top: -33px;
+            /*display: none;*/
+        }
+
+        #Position {
+            position: relative;
+            height: 100%;
+
+            box-sizing: border-box;
+        }
+
+        #Playback {
+            position: relative;
+            height: 100%;
+
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<div id="ControlPanel" class="ui-widget-content">
+    <div id="CompanyOrg" class="group">
+        <h3 class="ui-widget-header">组织架构</h3>
+
+        <div>
+            <p>Mauris mauris ante, blandit et, ultrices a, suscipit eget, quam. Integer ut neque. Vivamus nisi metus,
+                molestie vel, gravida in, condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. Nam mi. Proin
+                viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.</p>
+        </div>
+    </div>
+    <div id="WorkingLog" class="group">
+        <h3 class="ui-widget-header">运行记录</h3>
+
+        <div>
+            <p>Nam enim risus, molestie et, porta ac, aliquam ac, risus. Quisque lobortis. Phasellus pellentesque purus
+                in massa. Aenean in pede. Phasellus ac libero ac tellus pellentesque semper. Sed ac felis. Sed commodo,
+                magna quis lacinia ornare, quam ante aliquam nisi, eu iaculis leo purus venenatis dui. </p>
+            <ul>
+                <li>List item one</li>
+                <li>List item two</li>
+                <li>List item three</li>
+            </ul>
+            <p>Nam enim risus, molestie et, porta ac, aliquam ac, risus. Quisque lobortis. Phasellus pellentesque purus
+                in massa. Aenean in pede. Phasellus ac libero ac tellus pellentesque semper. Sed ac felis. Sed commodo,
+                magna quis lacinia ornare, quam ante aliquam nisi, eu iaculis leo purus venenatis dui. </p>
+
+            <p>Nam enim risus, molestie et, porta ac, aliquam ac, risus. Quisque lobortis. Phasellus pellentesque purus
+                in massa. Aenean in pede. Phasellus ac libero ac tellus pellentesque semper. Sed ac felis. Sed commodo,
+                magna quis lacinia ornare, quam ante aliquam nisi, eu iaculis leo purus venenatis dui. </p>
+        </div>
+
+
+    </div>
+
+</div>
+<div id="Perspective">
+    <ul id="menuTab">
+        <li><a href="#Position">实时定位</a></li>
+        <li><a href="#Playback">轨迹回放</a></li>
+    </ul>
+    <div id="Position"></div>
+    <div id="Playback"></div>
+</div>
+
+
+<script type="text/javascript" src="../js/NineTang.js"></script>
+<script type="text/javascript" src="../js/api_BAIDU.js"></script>
+
+<script type="text/javascript">
+    $(function () {
+        $('#ControlPanel')
+                .resizable({
+                    handles: "e", //右
+                    maxWidth: 350,  //px
+                    minWidth: 250
+                })
+                .accordion({
+                    header: "> div >h3"
+                })
+                .sortable({
+                    axis: 'y',
+                    handle: 'h3',
+                    stop: function (event, ui) {
+                        // IE doesn't register the blur when sorting
+                        // so trigger focusout handlers to remove .ui-state-focus
+                        ui.item.children("h3").triggerHandler("focusout");
+                    }
+                });
+
+        var perspective = $('#Perspective').tabs();
+        perspective.find('.ui-tabs-nav').sortable({
+            axis: 'x',
+            stop: function () {
+                perspective.tabs('refresh');
+            }
+        });
+
+        var map = BAIDU.initMap('Position');
+
+
+    });
+</script>
+
+</body>
+</html>
