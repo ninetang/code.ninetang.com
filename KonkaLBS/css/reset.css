@@ -1,0 +1,22 @@
+/**
+ * Created By NineTang
+ * Date: 13-9-16
+ * Time: 下午3:26
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+html {
+}
+
+body {
+    font-size: 62.5%;
+    font-family: '微软雅黑';
+}

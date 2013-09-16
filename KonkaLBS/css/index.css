@@ -1,0 +1,48 @@
+#ControlPanel {
+    width: 300px;
+    height: 100%;
+    float: left;
+    box-sizing: border-box;
+    border: none;
+}
+
+.ui-resizable-e {
+    border-right: 1px solid #d3d3d3;
+}
+
+#Perspective {
+    height: 100%;
+    padding: 29px 0 0 10px;
+    box-sizing: border-box;
+    margin-left: 300px;
+    border: none;
+}
+
+.group {
+    zoom: 1;
+}
+
+#menuTab {
+    display: block;
+    position: relative;
+    margin-top: -29px;
+    height: 29px;
+    border: none;
+    background: none;
+    padding: 0;
+    /*display: none;*/
+}
+
+#Position, #Playback, #CtrlCenter {
+    position: relative;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#Position {
+    background: #009933;
+}
+
+#Playback {
+    background: #666666;
+}
