@@ -12,30 +12,25 @@
     <script type="text/javascript" src="../lib/jquery-ui.js"></script>
 </head>
 <body>
-<div id="ControlPanel" class="ui-widget-content">
-    <div id="CompanyOrg" class="group">
+
+<div id="ControlPanel">
+    <div id="accordion">
         <h3 class="ui-widget-header">组织架构</h3>
 
-        <div>
-            <p>Mauris mauris ante, blandit et, ultrices a, suscipit eget, quam. Integer ut neque. Vivamus nisi metus,
-                molestie vel, gravida in, condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. Nam mi. Proin
-                viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.</p>
+        <div id="CompanyOrg" class="group">
         </div>
-    </div>
-    <div id="E-Zone" class="group">
+
         <h3 class="ui-widget-header">电子围栏</h3>
 
-        <div>
+        <div id="E-Zone" class="group">
             <p><a href="">显示围栏</a></p>
 
             <p><a href="">绘制围栏</a></p>
         </div>
 
-    </div>
-    <div id="WorkingLog" class="group">
         <h3 class="ui-widget-header">运行记录</h3>
 
-        <div>
+        <div id="WorkingLog" class="group">
             <p>Nam enim risus, molestie et, porta ac, aliquam ac, risus. Quisque lobortis. Phasellus pellentesque purus
                 in massa. Aenean in pede. Phasellus ac libero ac tellus pellentesque semper. Sed ac felis. Sed commodo,
                 magna quis lacinia ornare, quam ante aliquam nisi, eu iaculis leo purus venenatis dui. </p>
@@ -53,7 +48,6 @@
                 magna quis lacinia ornare, quam ante aliquam nisi, eu iaculis leo purus venenatis dui. </p>
         </div>
     </div>
-
 </div>
 <div id="Perspective">
     <ul id="menuTab">
@@ -68,20 +62,10 @@
 </div>
 <script type="text/javascript">
     $(function () {
-        $('#ControlPanel')
-                .resizable({
-                    handles: "e", //右
-                    maxWidth: 350,  //px
-                    minWidth: 250,
-                    resize: function (event, ui) {
-                        var ml = $('#Perspective').css('marginLeft');
-                        $('#Perspective').css('marginLeft', this.clientWidth);
-                        //ui.width();
 
-                    }
-                })
+        $('#accordion')
                 .accordion({
-                    header: "> div >h3"
+                    heightStyle: "fill"
                 })
                 .sortable({
                     axis: 'y',
@@ -92,6 +76,22 @@
                         ui.item.children("h3").triggerHandler("focusout");
                     }
                 });
+        ;
+
+
+        $('#ControlPanel')
+                .resizable({
+                    handles: "e", //右
+                    maxWidth: 350,  //px
+                    minWidth: 250,
+                    resize: function (event, ui) {
+                        //var ml = $('#Perspective').css('marginLeft');
+                        $("#accordion").accordion("refresh");
+                        $('#Perspective').css('marginLeft', this.clientWidth);
+                        //ui.width();
+                    }
+                })
+
 
         var perspective = $('#Perspective').tabs();
         perspective.find('.ui-tabs-nav').sortable({
@@ -100,13 +100,14 @@
                 perspective.tabs('refresh');
             }
         });
-//        var map = BAIDU.initMap('Position');
-
     });
 </script>
 
-<!--<script type="text/javascript" src="../js/NineTang.js"></script>
-<script type="text/javascript" src="../js/api_BAIDU.js"></script>-->
+<script type="text/javascript" src="../js/NineTang.js"></script>
+<script type="text/javascript" src="../js/api_BAIDU.js"></script>
+<script type="text/javascript">
+    var map = BAIDU.initMap('Playback', null);
+</script>
 
 </body>
 </html>
