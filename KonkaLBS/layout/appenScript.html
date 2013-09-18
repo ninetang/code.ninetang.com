@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta name="Author" content="NineTang">
+</head>
+<body>
+<div id="test">
+</div>
+<script type="text/javascript">
+    function appendScript(src, ele) {
+        if (typeof ele == 'string') {
+            ele = document.getElementById(ele);
+        }
+        ele = ele || document.body;
+
+        var script = document.createElement('script'),
+                loadedCallback = function (e) {
+                    if (console.dir) {
+                        console.dir(e);
+                    }
+                };
+        script.src = src;
+        script.onload ? script.onload = loadedCallback : script.onreadystatechange = loadedCallback;
+        ele.appendChild(script);
+    }
+
+    var src = '../js/NineTang.js';
+    appendScript(src, 'test');
+
+</script>
+</body>
+</html>

@@ -412,6 +412,23 @@
         };
 
 
+        $$.HTTP.appendScript = function (src, ele) {
+            if (typeof ele == 'string') {
+                ele = document.getElementById(ele);
+            }
+            ele = ele || document.body;
+
+            var script = document.createElement('script'),
+                loadedCallback = function (e) {
+                    if (console.dir) {
+                        console.dir(e);
+                    }
+                };
+            script.src = src;
+            script.onload ? script.onload = loadedCallback : script.onreadystatechange = loadedCallback;
+            ele.appendChild(script);
+        };
+
         /**
          @param {XMLHttpRequest } request
          @returns {}

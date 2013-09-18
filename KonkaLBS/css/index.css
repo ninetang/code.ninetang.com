@@ -13,7 +13,7 @@
 
 #Perspective {
     height: 100%;
-    padding: 30px 0 0 10px;
+    padding: 30px 0 0 5px;
     box-sizing: border-box;
     margin-left: 300px;
     border: none;
@@ -45,4 +45,16 @@
 
 #Playback {
     background: #666666;
+}
+
+#MaskLayer {
+    height: 100%;
+    width: 100%;
+    background: #ffffff;
+    position: absolute;
+    text-align: center;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    padding-top: 10%;
 }
