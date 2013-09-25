@@ -13,7 +13,7 @@ html, body {
     height: 100%;
 }
 
-html {
+html, body {
     overflow-y: hidden;
 }
 
