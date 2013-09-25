@@ -1,6 +1,83 @@
-//初始化组织构架CompanyOrg, clientNodes
+// var DEBUG = true;
+
+$(document)
+    .on('layoutDone', function (e) {
+        var admin = {cid: 1};
+        //根据管理员id初始化组织架构
+        KLBS.CompanyOrg.init(admin.cid);
+        //根据DIV初始化地图
+        KLBS.BD.init('RTMonitor');
+    })
+    .on('checkNode', KLBS.checkHandler)
+    .on('cancelNode', KLBS.checkHandler);
+
+
+//全局KLBS
 (function (window) {
+    var KLBS = {},
+        PMSet = {};
+    KLBS.api = 'http://zhl.kkplayer.cn/index.php?jsoncallback=?';
+    KLBS.Event = {//事件管理器
+        layoutDone: 'layoutDone',
+        node: {
+            check: 'checkNode',
+            cancel: 'cancelNode',
+            checkbox: function (treeId, treeNode) {
+                var evt,
+                    clientID = (treeNode.id + '').slice((treeNode.pid + '').length),
+                    client = {
+                        info: {
+                            cID: clientID,
+                            cName: treeNode.name,
+                            cPhone: treeNode.phone
+                        }
+                    };
+
+                if (!treeNode.checked) {
+                    evt = $.Event(this.check, client);
+                } else {
+                    evt = $.Event(this.cancel, client);
+                }
+                $(document).trigger(evt);
+            }
+        }
+    };
+    KLBS.eHandler = {
+        node: {
+            beforeCheck: function (treeId, treeNode) {
+                //treeId  String 对应 zTree 的 treeId，便于用户操控
+                //treeNode JSON 进行 勾选 或 取消勾选 的节点 JSON 数据对象
+                KLBS.Event.checkbox(treeId, treeNode);
+            },
+            beforeClick: function (treeId, treeNode, clickFlag) {
+            }
+        }
+    };
+
+
+    KLBS.checkHandler = function (e) {
+        var info = e.info,
+            mobile = {},
+            action = {
+                r: 'gate/getLatestSessionByPhone',
+                phone: info.phone
+            };
+        //异步获取终端坐标
+        $.getJSON(KLBS.api, action)
+            .done(function (data) {
+                mobile.coord = data;
+            });
+    };
+
+
+    window.KLBS = KLBS;
+})(window);
+
+
+//初始化组织构架CompanyOrg, clientNodes
+(function (KLBS) {
     var CompanyOrg = {},
+        nodeHandler = KLBS.eHandler.node,
         setting = {
             view: {
                 addDiyDom: null, //
@@ -33,10 +110,8 @@
                 }
             },
             callback: {
-                beforeCheck: function () {
-                },
-                beforeClick: function () {
-                }
+                beforeCheck: nodeHandler.beforeCheck,
+                beforeClick: nodeHandler.beforeClick
             },
             edit: {
                 drag: {
@@ -66,13 +141,12 @@
 
     CompanyOrg.init = function (cid) {
         //获取后台数据
-        var API = 'http://zhl.kkplayer.cn/index.php?jsoncallback=?',
-            data = {
-                r: 'gate/getCompanySc',
-                company: cid,
-                format: 'json'
-            };
-        $.getJSON(API, data)
+        var action = {
+            r: 'gate/getCompanySc',
+            company: cid,
+            format: 'json'
+        };
+        $.getJSON(KLBS.api, action)
             .done(function (json) {
                 var treeNodes = treeJson(json), treeObj;
                 treeObj = CompanyOrg.treeObj = $.fn.zTree.init($('#CompanyOrg'), setting, treeNodes);
@@ -80,6 +154,7 @@
             });
     };
 
+    //格式化JSON为组织树
     function treeJson(json) {
         var com = json.company && json.company.name ? json.company : {cid: 1, name: '深圳康佳通信科技'},
             sections = json.sections ? json.sections : [],
@@ -115,6 +190,7 @@
         return tree;
     }
 
+    //增加人员
     function addHoverDom(treeId, treeNode) {
         var sObj = $("#" + treeNode.tId + "_span");
         if (treeNode.editNameFlag || $("#addBtn_" + treeNode.id).length > 0 || !treeNode.isParent) return;
@@ -137,5 +213,5 @@
         $("#addBtn_" + treeNode.id).unbind().remove();
     }
 
-    window.CompanyOrg = CompanyOrg;
-}(window));
+    KLBS.CompanyOrg = CompanyOrg;
+}(KLBS));

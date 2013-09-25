@@ -35,77 +35,44 @@
 </div>
 <div id="Perspective">
     <ul id="menuTab">
-        <li><a href="#Position">实时监控</a></li>
+        <li><a href="#RTMonitor">实时监控</a></li>
         <li><a href="#Playback">轨迹回放</a></li>
         <li><a href="#CtrlCenter">管理中心</a></li>
         <li><a href="test.html"> 外部加载测试</a></li>
     </ul>
-    <div id="Position"></div>
-    <div id="Playback"></div>
+    <div id="RTMonitor">
+        <div class="transition">
+            <img src="../images/loading/loadinglit.gif" alt=""/>
+
+            <p>正在努力加载地图，请稍候...</p>
+        </div>
+
+    </div>
+    <div id="Playback">
+        <div class="transition">
+            <img src="../images/loading/loadinglit.gif" alt=""/>
+
+            <p>正在努力加载地图，请稍候...</p>
+        </div>
+    </div>
     <div id="CtrlCenter">
-        <img src="../images/loading/loadinglit.gif" alt=""/>
+        <div class="transition">
+            <img src="../images/loading/loadinglit.gif" alt=""/>
+
+            <p>正在努力加载组件，请稍候...</p>
+        </div>
     </div>
 </div>
 
 <div id="MaskLayer">
-    <!--<loading src="../images/loading/maskLoading.gif" alt=""/>-->
+
     <img src="../images/loading/loadinglit.gif" alt=""/>
 
-    <p>页面正在加载，请稍候...</p>
+    <p>正在加载组件，请稍候...</p>
 </div>
 <script type="text/javascript" src="../lib/jquery-1.9.1.js"></script>
 <script type="text/javascript" src="../lib/jquery-ui.js"></script>
-<script type="text/javascript">
-    var DEBUG = true;
-    $(function () {
-        $('#accordion')
-                .accordion({
-                    heightStyle: "fill"
-                })
-                .sortable({
-                    axis: 'y',
-                    handle: 'h3',
-                    stop: function (event, ui) {
-                        // IE doesn't register the blur when sorting
-                        // so trigger focusout handlers to remove .ui-state-focus
-                        ui.item.children("h3").triggerHandler("focusout");
-                    }
-                });
-        $('#ControlPanel')
-                .resizable({
-                    handles: "e", //右
-                    maxWidth: 450,  //px
-                    minWidth: 250,
-                    resize: function (event, ui) {
-                        //var ml = $('#Perspective').css('marginLeft');
-                        $("#accordion").accordion("refresh");
-                        $('#Perspective').css('marginLeft', this.clientWidth);
-                        //ui.width();
-                    }
-                });
-
-
-        var perspective = $('#Perspective').tabs();
-        perspective.find('.ui-tabs-nav').sortable({
-            axis: 'x',
-            stop: function () {
-                perspective.tabs('refresh');
-            }
-        });
-        //至此：交互布局完成
-        $('#MaskLayer').hide();
-
-        //$('#ControlPanel').show('drop');
-        $('#ControlPanel').animate({marginLeft: '0'}, 'slow', function () {
-            //初始化组织架构
-            var admin = {cid: 1};
-            CompanyOrg.init(admin.cid);
-        });
-
-        //初始化地图
-
-    });
-</script>
+<script type="text/javascript" src="../js/layout.js"></script>
 <!--<script type="text/javascript" src="../lib/jquery.ztree.all-3.5.min.js"></script>-->
 <script type="text/javascript" src="../lib/jquery.ztree.all-3.5.js"></script>
 <script type="text/javascript" src="../js/CompanyOrg.js"></script>
