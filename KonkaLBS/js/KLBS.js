@@ -1,42 +1,43 @@
-//全局KLBS
-(function (window) {
+(function (window) {//全局KLBS对象:admin对象, BDMap对象, CompanyOrg对象
     var KLBS = {};
+
+
     KLBS.init = function () {
         this.admin = {
             comId: 1,
             name: 'KAdmin'
         };
         this.api = 'http://zhl.kkplayer.cn/index.php?jsoncallback=?';
-        //根据DIV初始化地图
-        this.BD.init('RTMonitor');
-        //根据管理员id初始化组织架构
-        this.CompanyOrg.init(this.admin.comId);
+        this.BDMap.init('RTMonitor');    //根据DIV初始化地图
+        this.CompanyOrg.init(this.admin.comId);//根据管理员id初始化组织架构
+        this.MPSet = {}; //监控终端对象集合
     };
-    window.KLBS = KLBS;
-})(window);
 
-//MPSet 监控终端对象集合
-(function (KLBS) {
-    var MPSet = {};
-    MPSet.checkHandler = function (treeId, treeNode) {
+    KLBS.checkHandler = function (treeId, treeNode) { //事件API in
         //treeId  String 对应 zTree 的 treeId，便于用户操控
         //treeNode JSON 进行 勾选 或 取消勾选 的节点 JSON 数据对象
-        var id = (treeNode.id + '').slice((treeNode.pid + '').length);
+        var id = (treeNode.id + '').slice((treeNode.pid + '').length),
+            MPSet = KLBS.MPSet,
+            map = KLBS.BDMap.map;
         if (!treeNode.checked) {//用户勾选节点
             if (!MPSet.hasOwnProperty(id)) {//首次勾选，异步获取终端坐标
                 var action = {
-                    r: 'gate/getLatestSessionByPhone',
+                    r: 'gpslocation/getLatestGpsByPhone',
                     phone: treeNode.phone
                 };
                 $.getJSON(KLBS.api, action)
                     .done(function (data) {
                         //todo
                         //创建MP实例，并加入集合
-                        MPSet[id] = new MP(treeNode, data);
+                        var mp = new MP(treeNode, data);
+                        map.addOverlay(mp.kBing.marker);
+                        //mp.kBing.blink()
+
+                        MPSet[id] = mp;
 
                     });
             } else {//非首次勾选
-                MPSet[id].updateMP();
+                //MPSet[id].updateMP();
             }
         } else {//取消勾选
             //todo
@@ -49,48 +50,34 @@
         }
     };
 
+    KLBS.clickHandler = function (treeId, treeNode, clickFlag) {
+    };
+
+    /** MP构造函数
+     * @constructor MP
+     * @param {Object} treeNode
+     * @param {JSON} data
+     */
     function MP(treeNode, data) {
+
         //用户关键信息
         this.clientInfo = {
             cName: treeNode.name,
             cPhone: treeNode.phone,
             cFrequency: treeNode.frequency * 1000 //
         };
-
         //用户坐标
         this.coord = data;
-        //MP在地图中的组件
-        this.onMap = new KLBS.BD(this.coord.longitude, this.coord.latitude);
-
-
-        //监听更新事件
-        //倒计时
-        this.updateTimeout = setTimeout(this.updateMP, this.clientInfo.cFrequency);
+        //kBing实例
+        this.kBing = new KLBS.BDMap.KBing(this.coord.longitude, this.coord.latitude);
     }
 
-    MP.prototype.updateMP = function () {
-        //todo
-        //把原坐标变成旧坐标
-        //获取新坐标
-        //创建路书，移动Marker，更新infoWindow内容
-
-        //this.moveMarker();
-    };
-    MP.prototype.moveMarker = function () {
-        this.marker.setPosition(this.point);
-    }
+    window.KLBS = KLBS;
+})(window);
 
 
-    MPSet.clickHandler = function (treeId, treeNode, clickFlag) {
-    };
-    KLBS.MPSet = MPSet;
-})(KLBS);
-
-
-//初始化组织构架CompanyOrg, clientNodes
-(function (KLBS) {
+(function (KLBS, $) {//初始化KLBS.CompanyOrg对象, clientNodes //组织构架
     var CompanyOrg = {},
-        MPSet = KLBS.MPSet,
         setting = {
             view: {
                 addDiyDom: null, //
@@ -122,9 +109,9 @@
                     rootPId: null
                 }
             },
-            callback: {//勾选回调函数，转到MPSet对象运行
-                beforeCheck: MPSet.checkHandler,
-                beforeClick: MPSet.clickHandler
+            callback: {//事件API
+                beforeCheck: KLBS.checkHandler,
+                beforeClick: KLBS.clickHandler
             },
             edit: {
                 drag: {
@@ -150,7 +137,7 @@
             }
             //todo
         },
-        newCount = 1; //此处以0填充，以区别新增节点
+        newCount = 1; //区别新增节点
 
     CompanyOrg.init = function (cid) {
         //获取后台数据
@@ -169,6 +156,9 @@
 
     //格式化JSON为组织树
     function treeJson(json) {
+        /** @namespace json.sections */
+        /** @namespace json.clients */
+        /** @namespace json.company */
         var com = json.company && json.company.name ? json.company : {cid: 1, name: '深圳康佳通信科技'},
             sections = json.sections ? json.sections : [],
             clients = json.clients ? json.clients : [],
@@ -179,26 +169,25 @@
 
         for (; i < sections.length; i++) { //部门格式化
             var sec = sections[i],
-                pid = sec.pid,
-                tmp = {
-                    id: sec.sid - 0,
-                    pid: pid.substr(pid.lastIndexOf(',') + 1) - 0,
-                    name: sec.name,
-                    isParent: true
-                };
-            tree.push(tmp);
+                pid = sec.pid;
+            /** @namespace sec.sid */
+            tree.push({
+                id: sec.sid - 0,
+                pid: pid.substr(pid.lastIndexOf(',') + 1) - 0,
+                name: sec.name,
+                isParent: true
+            });
         }
 
         for (i = clients.length - 1; i > -1; i--) { //员工格式化
             var client = clients[i];
-            var tmp = {
+            tree.push({
                 pid: client.sid - 0,
                 frequency: client.frequency - 0,
                 name: client.name,
                 phone: client.phone,
                 id: client.sid + client.id - 0
-            };
-            tree.push(tmp);
+            });
         }
         return tree;
     }
@@ -206,11 +195,14 @@
     //增加人员
     function addHoverDom(treeId, treeNode) {
         var sObj = $("#" + treeNode.tId + "_span");
-        if (treeNode.editNameFlag || $("#addBtn_" + treeNode.id).length > 0 || !treeNode.isParent) return;
+        var btn = $("#addBtn_" + treeNode.id);
+
+
+        if (treeNode.editNameFlag || btn.length > 0 || !treeNode.isParent) return;
         var addStr = "<span class='button add' id='addBtn_" + treeNode.id
             + "' title='add node' onfocus='this.blur();'></span>";
         sObj.after(addStr);
-        var btn = $("#addBtn_" + treeNode.id);
+
         if (btn) btn.bind("click", function () {
             var zTree = CompanyOrg.treeObj;
             zTree.addNodes(treeNode, {
@@ -227,4 +219,224 @@
     }
 
     KLBS.CompanyOrg = CompanyOrg;
-}(KLBS));
+}(KLBS, $));
+
+
+(function (KLBS, $) {//KLBS的BDMap对象
+    var BDMap = function () {
+        },
+        CONF,
+        API = {
+            BAIDU: {
+                version: '2.0',
+                key: '9d1f784b156ff52c505bfdff123792fc', // 'C826f0811d87710605845cd59fa6b278',
+                url: function () {
+                    //window.BMap_loadScriptTime = (new Date).getTime();
+                    var t = 20130916114116;
+
+                    return 'http://api.map.baidu.com/getscript?v=' + this.version + '&ak=' + this.key + '&services=&t=' + t;
+
+                }
+            }
+        };
+    BDMap.init = function (container) {
+        if (typeof BMap == 'undefined') {
+            $.getScript(API.BAIDU.url(), function (data, textStatus, jqxhr) {
+//                console.log(data); // Data returned
+//                console.log(textStatus); // Success
+//                console.log(jqxhr.status); // 200
+            })
+                .done(function (script, textStatus) {
+                    CONF = initConf();
+                    var map = new BMap.Map(container, CONF.MapOptions);
+                    BDMap.map = map;//BD对象map
+                    setMap(map);
+                })
+                .fail(function (jqxhr, settings, exception) {
+                    //console.log("Triggered ajaxError handler.");
+                });
+        } else {
+            var map = new BMap.Map(container, CONF.MapOptions);
+            setMap(map);
+        }
+    };
+
+    /**  KBing构造函数
+     * @constructor
+     * @param {number} lng 经度
+     * @param {number} lat 纬度
+     */
+    (function () {
+        var KBing = function (lng, lat) {
+            this.lastPoint = newPoint();
+            this.point = newPoint(lng, lat);
+            this.icon = newIcon();
+            this.iconOpts = CONF.IconOptions.KBingIcon;
+
+            this.infowindow = newInfoWindow();
+            this.marker = newMarker(this.point, this.icon);
+
+
+            this.blinking = 0;//眨眼动画
+            this.blink(3, 3000);
+        }
+
+        KBing.prototype.blink = function (times, interval) {
+            var timeout = 100,
+                tmpTimes = times,
+                opt = this.iconOpts,
+                icon = this.icon,
+                marker = this.marker,
+                kBing = this,
+                totalFrame = opt.offsets.length,
+                nextFrame = opt.loopOffset(),
+                frame = 0;
+
+            if (!arguments[0] || !arguments[1]) {
+                times = 3;
+                interval = 3000;
+            }
+
+            if (this.blinking > 0) {
+                this.blinking = 0;
+            }
+
+            function play() {
+                icon.setImageOffset(nextFrame());
+                marker.setIcon(icon);
+                frame++;//执行完1帧
+                if (frame < totalFrame) {
+                    timeout = 100;
+                } else {//执行完一次循环
+                    frame = 0;
+                    times--;//执行完一次眨眼动画,
+                    if (times == 0) { //哈哈，有意思
+                        times = tmpTimes;
+                        timeout = 200;
+                    } else {
+                        timeout = interval; //间隔3秒后执行
+                    }
+                }
+                blink();
+            }
+
+            function blink() {
+                kBing.blinking = window.setTimeout(play, timeout);
+            }
+
+            blink();
+        };
+
+        KBing.prototype.stopBlink = function () {
+            clearTimeout(this.blinking);
+            this.icon.setImageOffset(this.iconOpts.offsets[0]);
+            this.marker.setIcon(this.icon);
+        };
+        BDMap.KBing = KBing;
+    })();
+
+
+    function newPoint(lng, lat) {
+        var length = arguments.length;
+        if (length == 2) {
+            //todo 检测经纬度是否合法 check()
+            return new BMap.Point(lng, lat);
+        } else {
+            var KK = CONF.Konka;
+            return new BMap.Point(KK.lng, KK.lat);
+        }
+    }
+
+    function newIcon() {
+        var opt = CONF.IconOptions.KBingIcon,
+            icon = new BMap.Icon(opt.url, opt.size);//Icon(url:String, size:Size[, opts:IconOptions])	以给定的图像地址和大小创建图标对象实例。
+
+        icon.setAnchor(opt.anchor);
+        return icon;
+    }
+
+
+    function newInfoWindow() {
+        //todo
+    }
+
+    function newMarker(point, icon) {
+        var marker = new BMap.Marker(point);
+        marker.setIcon(icon);
+
+        marker.setAnimation(BMAP_ANIMATION_DROP); // BMAP_ANIMATION_DROP	坠落动画。 BMAP_ANIMATION_BOUNCE	跳动动画。
+        return marker;
+    }
+
+    function initConf() {
+        return {
+            Konka: {//康佳停车场
+                lat: 22.540179,
+                lng: 113.999549
+            },
+            MapOptions: {
+                minZoom: 9,	//  Number	地图允许展示的最小级别。
+                maxZoom: 19,	//    Number	地图允许展示的最大级别。
+                mapType: BMAP_NORMAL_MAP,	//    MapType	地图类型，默认为BMAP_NORMAL_MAP。
+                //BMAP_PERSPECTIVE_MAP	此地图类型展示透视图像视图。
+                //BMAP_SATELLITE_MAP	此地图类型展示卫星视图。(自 1.2 新增)
+                //BMAP_HYBRID_MAP	此地图类型展示卫星和路网的混合视图。(自 1.2 新增)
+                enableHighResolution: true,
+                // Boolean是否启用使用高分辨率地图。在iPhone4及其后续设备上，可以通过开启此选项获取更高分辨率的底图，v1.2,v1.3版本默认不开启，v1.4默认为开启状态。
+                enableAutoResize: true,	//    Boolean	是否自动适应地图容器变化，默认启用。
+                enableMapClick: true	//    Boolean	是否开启底图可点功能，默认启用。
+            },
+            IconOptions: {
+                anchor: '',	            // Size	图标的定位锚点。此点用来决定图标与地理位置的关系，是相对于图标左上角的偏移值，默认等于图标宽度和高度的中间值。
+                imageOffset: '',	    // Size	图片相对于可视区域的偏移值。
+                infoWindowOffset: '',   // Size	信息窗口定位锚点。开启信息窗口时，信息窗口底部尖角相对于图标左上角的位置，默认等于图标的anchor。
+                infoWindowAnchor: '',   // Size	信息窗口定位锚点。开启信息窗口时，信息窗口底部尖角相对于图标左上角的位置，默认等于图标的anchor。
+                printImageUrl: '',	    // String	用于打印的图片，此属性只适用于IE6，为了解决IE6在包含滤镜的情况下打印样式不正确的问题。
+                KBingIcon: {
+                    url: '../images/3X4w30.png',
+                    size: new BMap.Size(30, 40),
+                    anchor: new BMap.Size(15, 40),
+                    offsets: [
+                        new BMap.Size(0, 0),
+                        new BMap.Size(-30, 0),
+                        new BMap.Size(-60, 0)
+                    ],
+
+                    loopOffset: function () {
+                        var offsets = this.offsets,
+                            curFrame = 0,
+                            length = offsets.length;
+                        return function () {
+                            if (curFrame != (length - 1)) {
+                                curFrame++;
+                            } else {
+                                curFrame = 0;
+                            }
+                            return  offsets[curFrame];
+                        };
+                    }
+                }
+            }
+        };
+    }
+
+    function setMap(map) {//显示地图
+        var
+            LEVEL = 10,
+            center = newPoint(),
+            MapStyle = {
+                features: ['road', 'point', /*'water', 'land', */'building'],
+                style: 'normal' //normal（默认样式）,dark（深色样式）,light（浅色样式）
+            };
+        map.enableScrollWheelZoom();
+        map.setMapStyle(MapStyle);
+        map.centerAndZoom(center, LEVEL);
+    }
+
+    KLBS.BDMap = BDMap;
+})(KLBS, $);
+
+
+
+
+
