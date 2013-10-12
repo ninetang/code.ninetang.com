@@ -2033,8 +2033,10 @@
                 var setting = data.getSetting(event.data.treeId),
                     checkedKey = setting.data.key.checked;
                 if (tools.apply(setting.callback.beforeCheck, [setting.treeId, node], true) == false) return true;
+
                 node[checkedKey] = !node[checkedKey];
                 view.checkNodeRelation(setting, node);
+
                 var checkObj = $("#" + node.tId + consts.id.CHECK);
                 view.setChkClass(setting, checkObj, node);
                 view.repairParentChkClassWithSelf(setting, node);
@@ -2260,6 +2262,10 @@
                     } else {
                         node.check_Child_State = -1;
                     }
+
+                    //ninetang 2013.10.11 运行时用户运作操作
+                    KLBS.setupAction(node);
+
                     view.setChkClass(setting, checkObj, node);
                     if (setting.check.autoCheckTrigger && node != srcNode && node.nocheck !== true && node.chkDisabled !== true) {
                         setting.treeObj.trigger(consts.event.CHECK, [null, setting.treeId, node]);

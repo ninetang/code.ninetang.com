@@ -1,6 +1,56 @@
-(function (window) {//全局KLBS对象:admin对象, BDMap对象, CompanyOrg对象
-    var KLBS = {};
+//全局KLBS对象
+(function (window, $) {//admin对象, BDMap对象, CompanyTree对象
 
+    var KLBS = {},
+        Events = KLBS.Events = {
+            gpsReceived: 'gpsReceived'
+        },
+        Handlers = KLBS.Handlers = {
+            userCheck: function (treeId, treeNode) {
+                //treeId  String 对应 zTree 的 treeId，便于用户操控
+                //treeNode JSON 进行 勾选 或 取消勾选 的节点 JSON 数据对象
+            },
+            userClick: function (treeId, treeNode, clickFlag) {
+            },
+            gpsReceivedHandler: function (e, data) {  //收到gps数据就处理MP对象
+                var id = data.id,
+                    gps_json = data.json,
+                    MPSet = KLBS.MPSet,
+                    map = KLBS.BDMap.map;
+
+                if (!MPSet.hasOwnProperty(id)) { //首次勾选？
+                    //todo
+                    //创建MP实例，并加入集合
+                    var mp = new MP(id, gps_json);
+                    MPSet[id] = mp;
+                    //mp.kBing.blink()
+                    map.addOverlay(mp.kBing.marker);
+                } else {//非首次勾选
+                    var mp = MPSet[id];
+                    mp.update();
+                }
+            }
+        };
+    $(KLBS).on(Events.gpsReceived, Handlers.gpsReceivedHandler);
+
+
+    //该函数在每次node被勾选之前运行
+    KLBS.setupAction = function (treeNode) {
+        if (!treeNode.isParent) {
+            var id = (treeNode.id + '').slice((treeNode.pid + '').length),
+                phone = this.clients[id].phone;
+
+            if (treeNode.checked) {//用户每次勾选 都 请求数据
+                KLBS.getInstantGPS(id, phone);
+            } else {//取消勾选
+                if (this.MPSet.hasOwnProperty(id)) {
+                    var mp = KLBS.MPSet[id];
+                    return mp.cancelCheck();
+                } else {
+                }
+            }
+        }
+    }
 
     KLBS.init = function () {
         this.admin = {
@@ -8,76 +58,75 @@
             name: 'KAdmin'
         };
         this.api = 'http://zhl.kkplayer.cn/index.php?jsoncallback=?';
+        this.clients = {};
         this.BDMap.init('RTMonitor');    //根据DIV初始化地图
-        this.CompanyOrg.init(this.admin.comId);//根据管理员id初始化组织架构
+        this.CompanyTree.init(this.admin.comId);//根据管理员id初始化组织架构
         this.MPSet = {}; //监控终端对象集合
     };
 
-    KLBS.checkHandler = function (treeId, treeNode) { //事件API in
-        //treeId  String 对应 zTree 的 treeId，便于用户操控
-        //treeNode JSON 进行 勾选 或 取消勾选 的节点 JSON 数据对象
-        var id = (treeNode.id + '').slice((treeNode.pid + '').length),
-            MPSet = KLBS.MPSet,
-            map = KLBS.BDMap.map;
-        if (!treeNode.checked) {//用户勾选节点
-            if (!MPSet.hasOwnProperty(id)) {//首次勾选，异步获取终端坐标
-                var action = {
-                    r: 'gpslocation/getLatestGpsByPhone',
-                    phone: treeNode.phone
-                };
-                $.getJSON(KLBS.api, action)
-                    .done(function (data) {
-                        //todo
-                        //创建MP实例，并加入集合
-                        var mp = new MP(treeNode, data);
-                        map.addOverlay(mp.kBing.marker);
-                        //mp.kBing.blink()
 
-                        MPSet[id] = mp;
-
+    KLBS.getInstantGPS = function (id, phone) {//收到数据，发送事件
+        var action = {
+            r: 'gpslocation/getLatestGpsByPhone',
+            phone: phone
+        };
+        $.getJSON(KLBS.api, action)
+            .done(function (gps_json) {
+                if (gps_json && gps_json.hasOwnProperty('phonenumber')) { //收到数据，发送事件
+                    var evt = $.Event(Events.gpsReceived);
+                    $(KLBS).trigger(evt, {
+                        id: id,
+                        json: gps_json
                     });
-            } else {//非首次勾选
-                //MPSet[id].updateMP();
-            }
-        } else {//取消勾选
-            //todo
-            //移除坐标更新句柄
-            var mp = MPSet[id];
-            mp.updateTimeout = clearTimeout(mp.updateTimeout);
-            //隐藏Marker
-            mp.marker.hide();
-            //去掉勾显示
-        }
-    };
+                } else {
+                }
+            });
+    }
 
-    KLBS.clickHandler = function (treeId, treeNode, clickFlag) {
-    };
 
     /** MP构造函数
      * @constructor MP
-     * @param {Object} treeNode
+     * @param {String} id
      * @param {JSON} data
      */
-    function MP(treeNode, data) {
-
-        //用户关键信息
-        this.clientInfo = {
-            cName: treeNode.name,
-            cPhone: treeNode.phone,
-            cFrequency: treeNode.frequency * 1000 //
-        };
+    function MP(id, data) {
+        this.id = id;
+        var cFrequency = KLBS.clients[id].frequency;
         //用户坐标
         this.coord = data;
         //kBing实例
-        this.kBing = new KLBS.BDMap.KBing(this.coord.longitude, this.coord.latitude);
+        this.kBing = new KLBS.BDMap.KBing(this.coord.longitude, this.coord.latitude, cFrequency);
+        this.autoUpdate();
     }
 
+    MP.prototype.cancelCheck = function () {
+        //todo
+        //移除坐标更新句柄
+        //不再更新坐标
+        this.kBing.stopUpdate();
+        //隐藏Marker
+        this.kBing.marker.hide();
+        //去掉勾显示
+        return true;
+    };
+
+    MP.prototype.update = function () {
+        var id = this.id;
+        KLBS.getInstantGPS(id, KLBS.clients[id].phone);
+        //this.kBing.update();
+    };
+    MP.prototype.autoUpdate = function () {
+        this.kBing.autoUpdate();
+    };
+
+
     window.KLBS = KLBS;
-})(window);
+})(window, $);
 
 
-(function (KLBS, $) {//初始化KLBS.CompanyOrg对象, clientNodes //组织构架
-    var CompanyOrg = {},
+//组织构架
+(function (KLBS, $) {//初始化KLBS.CompanyTree对象, clientNodes
+    var CompanyTree = {},
         setting = {
             view: {
                 addDiyDom: null, //
@@ -110,8 +159,8 @@
                 }
             },
             callback: {//事件API
-                beforeCheck: KLBS.checkHandler,
-                beforeClick: KLBS.clickHandler
+                beforeCheck: KLBS.Handlers.userCheck,
+                beforeClick: KLBS.Handlers.userClick
             },
             edit: {
                 drag: {
@@ -139,23 +188,27 @@
         },
         newCount = 1; //区别新增节点
 
-    CompanyOrg.init = function (cid) {
+
+    CompanyTree.init = function (cid) {
         //获取后台数据
         var action = {
             r: 'gate/getCompanySc',
-            cid: cid/*,
-             format: 'json'*/
+            cid: cid
         };
         $.getJSON(KLBS.api, action)
-            .done(function (json) {
-                var treeNodes = treeJson(json), treeObj;
-                treeObj = CompanyOrg.treeObj = $.fn.zTree.init($('#CompanyOrg'), setting, treeNodes);
+            .done(function (json) {//异步加载数据1
+                /*
+                 var evt = $.Event(KLBS.Events.treeReceived);
+                 $(KLBS).trigger(evt, json);*/
+
+                var treeNodes = formatJSON(json), treeObj;
+                treeObj /*= CompanyTree.treeObj */ = $.fn.zTree.init($('#CompanyTree'), setting, treeNodes);
                 treeObj.expandNode(treeObj.getNodeByParam('name', '科技办'));//展开科技办父节点
             });
     };
 
     //格式化JSON为组织树
-    function treeJson(json) {
+    function formatJSON(json) {
         /** @namespace json.sections */
         /** @namespace json.clients */
         /** @namespace json.company */
@@ -181,15 +234,26 @@
 
         for (i = clients.length - 1; i > -1; i--) { //员工格式化
             var client = clients[i];
+            addClients(client);
             tree.push({
                 pid: client.sid - 0,
-                frequency: client.frequency - 0,
+                //frequency: client.frequency - 0,
                 name: client.name,
-                phone: client.phone,
+                //phone: client.phone,
                 id: client.sid + client.id - 0
             });
         }
         return tree;
+    }
+
+
+    //存入KLBS.clients ，以便查询
+    function addClients(client) {
+        KLBS.clients[client.id] = {
+            name: client.name,
+            phone: client.phone,
+            frequency: client.frequency
+        }
     }
 
     //增加人员
@@ -204,7 +268,7 @@
         sObj.after(addStr);
 
         if (btn) btn.bind("click", function () {
-            var zTree = CompanyOrg.treeObj;
+            var zTree = CompanyTree.treeObj;
             zTree.addNodes(treeNode, {
                 id: (treeNode.id + '0' + newCount), //此处以0填充，以区别新增节点
                 pId: treeNode.id,
@@ -218,11 +282,12 @@
         $("#addBtn_" + treeNode.id).unbind().remove();
     }
 
-    KLBS.CompanyOrg = CompanyOrg;
+    KLBS.CompanyTree = CompanyTree;
 }(KLBS, $));
 
 
-(function (KLBS, $) {//KLBS的BDMap对象
+//KLBS的BDMap对象
+(function (KLBS, $) {
     var BDMap = function () {
         },
         CONF,
@@ -250,14 +315,14 @@
                     CONF = initConf();
                     var map = new BMap.Map(container, CONF.MapOptions);
                     BDMap.map = map;//BD对象map
-                    setMap(map);
+                    setupMap(map);
                 })
                 .fail(function (jqxhr, settings, exception) {
                     //console.log("Triggered ajaxError handler.");
                 });
         } else {
             var map = new BMap.Map(container, CONF.MapOptions);
-            setMap(map);
+            setupMap(map);
         }
     };
 
@@ -267,7 +332,7 @@
      * @param {number} lat 纬度
      */
     (function () {
-        var KBing = function (lng, lat) {
+        var KBing = function (lng, lat, frequency) {
             this.lastPoint = newPoint();
             this.point = newPoint(lng, lat);
             this.icon = newIcon();
@@ -276,11 +341,17 @@
             this.infowindow = newInfoWindow();
             this.marker = newMarker(this.point, this.icon);
 
-
             this.blinking = 0;//眨眼动画
             this.blink(3, 3000);
+            //KBing的更新状态
+            this.autoUpdating = 0;
+            this.frequency = frequency;
+
         }
 
+        /**
+         * 眨眼动画
+         * */
         KBing.prototype.blink = function (times, interval) {
             var timeout = 100,
                 tmpTimes = times,
@@ -332,6 +403,29 @@
             this.icon.setImageOffset(this.iconOpts.offsets[0]);
             this.marker.setIcon(this.icon);
         };
+
+
+        //所有的kBing都能根据数据中获取的最新坐标，改变位置
+        KBing.prototype.update = function () {
+            //获取新坐标
+            //获取路书
+            //移动
+            this.marker.show();
+            this.autoUpdate();
+        };
+
+        //停止更新坐标
+        KBing.prototype.stopUpdate = function () {
+            clearTimeout(this.autoUpdating);
+        };
+
+
+        //N秒后自动更新
+        KBing.prototype.autoUpdate = function () {
+            this.autoUpdating = setTimeout(this.update, this.frequency);
+        }
+
+
         BDMap.KBing = KBing;
     })();
 
@@ -420,7 +514,7 @@
         };
     }
 
-    function setMap(map) {//显示地图
+    function setupMap(map) {//设置地图状态并显示
         var
             LEVEL = 10,
             center = newPoint(),
@@ -435,8 +529,3 @@
 
     KLBS.BDMap = BDMap;
 })(KLBS, $);
-
-
-
-
-
